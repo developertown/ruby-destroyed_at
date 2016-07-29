@@ -7,7 +7,8 @@ require 'destroyed_at/mapper'
 module DestroyedAt
   def self.included(klass)
     klass.instance_eval do
-      default_scope { where(destroyed_at: nil) }
+      default_scope { default_destroyed_at_scope }
+      scope :default_destroyed_at_scope, -> { where(destroyed_at: nil) }
       after_initialize :_set_destruction_state
       define_model_callbacks :restore
       extend ClassMethods
