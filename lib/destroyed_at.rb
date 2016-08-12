@@ -44,7 +44,7 @@ module DestroyedAt
     raw_write_attribute(:destroyed_at, timestamp)
     run_callbacks(:destroy) do
       destroy_associations
-      self.class.unscoped.where(self.class.primary_key => id).update_all(destroyed_at: timestamp)
+      self.class.unscope(where: :destroyed_at).where(self.class.primary_key => id).update_all(destroyed_at: timestamp)
       @destroyed = true
     end
   end
@@ -59,7 +59,7 @@ module DestroyedAt
   def restore
     state = nil
     run_callbacks(:restore) do
-      if state = (self.class.unscoped.where(self.class.primary_key => id).update_all(destroyed_at: nil) == 1)
+      if state = (self.class.unscope(where: :destroyed_at).where(self.class.primary_key => id).update_all(destroyed_at: nil) == 1)
         _restore_associations
         raw_write_attribute(:destroyed_at, nil)
         @destroyed = false
@@ -93,8 +93,8 @@ module DestroyedAt
       if assoc.options[:through] && assoc.options[:dependent] == :destroy
         assoc = association(assoc.options[:through])
       end
-      assoc.association_scope.each do |r|
-        if r.respond_to?(:restore) && r.destroyed_at == self.destroyed_at
+      assoc.association_scope.unscope(where: :destroyed_at).each do |r|
+        if r.respond_to?(:restore)
           r.restore
           reload_association = true
         end
